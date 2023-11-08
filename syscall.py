@@ -1,6 +1,7 @@
 import paramiko
 import time
 import re
+import json
 
 # SSH 클라이언트 객체 생성
 ssh_client = paramiko.SSHClient()
@@ -13,32 +14,36 @@ ssh_client.connect(hostname='192.168.1.10', port=22, username='root', password='
 
 # 원격 명령 실행
 stdin, stdout, stderr = ssh_client.exec_command('kubectl get nodes -o wide')  # 예: 원하는 명령어 입력
-
-# 결과 출력
 nodesInfo = stdout.read().decode('utf-8')
-#print(nodesInfo)
-
-# nodesInfo to json 
 nodesInfo = nodesInfo.split('\n')
 nodesInfo = nodesInfo[1:-1]
 nodesInfo = [re.split(r'\s{2,}', node) for node in nodesInfo]
-nodesInfo = [{'name': node[0], 'ip': node[5], 'status': node[1], 'roles': node[2], 'os-image': node[7]} for node in nodesInfo]
+nodesInfo = [{'name': node[0], 'ip': node[5], 'status': node[1], 
+              'roles': node[2], 'os-image': node[7],
+            'children':[{'name': 'pod', 'childen': []}]} for node in nodesInfo]
 
-# if nodesInfo[i].roles != 'master': all nodes place under the master node to json, key is childern 
-childern = []
-masterNode = {}
+stdin, stdout, stderr = ssh_client.exec_command('kubectl get pods --all-namespaces -o wide')  # 예: 원하는 명령어 입력
+podsInfo = stdout.read().decode('utf-8')
+podsInfo = podsInfo.split('\n')
+podsInfo = podsInfo[1:-1]
+podsInfo = [re.split(r'\s{2,}', pod) for pod in podsInfo]
+podsInfo = [{'namespace': pod[0], 'name': pod[1], 'ready': pod[2], 'status': pod[3], 'ip': pod[6], 'node':pod[7]} for pod in podsInfo]
+
+
+for pod in podsInfo:
+    for node in nodesInfo:
+        if pod['node'] == node['name']:
+            node['children'][0]['childen'].append(pod)
+
+nodes = {'name': 'node', 'children': []}
 for node in nodesInfo:
     if node['roles'] == 'master':
         masterNode = node
     else:
-        childern.append(node)
+        nodes['children'].append(node)
 
-masterNode['children'] = childern
-print(masterNode)
-print(ssh_client)
+masterNode['children'].append(nodes)
 
-# stdin, stdout, stderr = ssh_client.exec_command('sysdig')
-# time.sleep(5)
-# stdin, stdout, stderr = ssh_client.exec_command('^C')
-# print(stdout.read().decode('utf-8'))
+print(json.dumps(masterNode, ensure_ascii=False, indent=3)) 
+
 ssh_client.close()

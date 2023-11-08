@@ -18,4 +18,5 @@ router = APIRouter (
 async def getTotalNodes():
     print('hi', sshconn.ssh_connection)
     masterNode = topologyNodes.getNodes(sshconn.ssh_connection)
+
     return masterNode

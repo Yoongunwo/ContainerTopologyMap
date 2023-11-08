@@ -3,76 +3,28 @@ import { useNavigate } from 'react-router-dom';
 
 import * as d3 from 'd3';
 
-import { fetchNodeList } from '../../services/sshService';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@mui/material';
 
-/* const data1 = {
-    name: 'flare',
-    children: [
-        {
-            name: 'analytics',
-            children: [
-                {
-                    name: 'cluster',
-                    children: [
-                        { name: 'AgglomerativeCluster', size: 3938 },
-                        { name: 'CommunityStructure', size: 3812 },
-                        { name: 'HierarchicalCluster', size: 6714 },
-                        { name: 'MergeEdge', size: 743 },
-                    ],
-                },
-                {
-                    name: 'graph',
-                    children: [
-                        { name: 'BetweennessCentrality', size: 3534 },
-                        { name: 'LinkDistance', size: 5731 },
-                        { name: 'MaxFlowMinCut', size: 7840 },
-                        { name: 'ShortestPaths', size: 5914 },
-                        { name: 'SpanningTree', size: 3416 },
-                    ],
-                },
-                {
-                    name: 'optimization',
-                    children: [{ name: 'AspectRatioBanker', size: 7074 }],
-                },
-            ],
-        },
-        {
-            name: 'animate',
-            children: [
-                { name: 'Easing', size: 17010 },
-                { name: 'FunctionSequence', size: 5842 },
-                {
-                    name: 'interpolate',
-                    children: [
-                        { name: 'ArrayInterpolator', size: 1983 },
-                        { name: 'ColorInterpolator', size: 2047 },
-                        { name: 'DateInterpolator', size: 1375 },
-                        { name: 'Interpolator', size: 8746 },
-                        { name: 'MatrixInterpolator', size: 2202 },
-                        { name: 'NumberInterpolator', size: 1382 },
-                        { name: 'ObjectInterpolator', size: 1629 },
-                        { name: 'PointInterpolator', size: 1675 },
-                        { name: 'RectangleInterpolator', size: 2042 },
-                    ],
-                },
-                { name: 'ISchedulable', size: 1041 },
-                { name: 'Parallel', size: 5176 },
-                { name: 'Pause', size: 449 },
-                { name: 'Scheduler', size: 5593 },
-                { name: 'Sequence', size: 5534 },
-                { name: 'Transition', size: 9201 },
-                { name: 'Transitioner', size: 19975 },
-                { name: 'TransitionEvent', size: 1116 },
-                { name: 'Tween', size: 6006 },
-            ],
-        },
-    ],
-}; */
+import theme from '../../styles/theme';
+import { fetchNodeList } from '../../services/sshService';
+import containerImage from '../../static/images/docker-container.png';
+import kubernetesNodeImage from '../../static/images/kubernetes-node.png';
+
 const Topology = () => {
     const navigate = useNavigate();
     const svgRef = useRef(null);
     const [data, setData] = useState({});
     const [nodeList, setNodeList] = useState(null);
+    const [tableHeader, setTableHeader] = useState([]);
+    const [tableData, setTableData] = useState([]);
 
     useEffect(() => {
         fetchNodeList().then((response) => {
@@ -87,13 +39,16 @@ const Topology = () => {
     }, []);
 
     useEffect(() => {
-        const width = 1600;
+        const width = window.innerWidth;
 
         const root = d3.hierarchy(data);
-        const dx = 10;
+        const dx = 50;
         const dy = width / (root.height + 1);
         const tree = d3.tree().nodeSize([dx, dy]);
         root.sort((a, b) => d3.ascending(a.data.label, b.data.label));
+        console.log('root', root);
+        console.log('height', root.height);
+        console.log('tree', tree);
         tree(root);
 
         let x0 = Infinity;
@@ -139,30 +94,80 @@ const Topology = () => {
             .join('g')
             .attr('transform', (d) => `translate(${d.y},${d.x})`);
 
-        node.append('circle')
+        node.append('image')
+            .attr('xlink:href', (d) => {
+                if (d.data.kind == 'node') return kubernetesNodeImage;
+                else if (d.data.kind == 'pod') return containerImage;
+            }) // 이미지 파일의 경로
+            .attr('x', -20) // 이미지 가로 크기 조정
+            .attr('y', -20) // 이미지 세로 크기 조정
+            .attr('width', 60) // 이미지 가로 크기 조정
+            .attr('height', 40); // 이미지 세로 크기 조정
+
+        /*         node.append('circle')
             .attr('fill', (d) => (d.children ? '#555' : '#999'))
-            .attr('r', 2.5);
+            .attr('r', 2.5); */
 
         node.append('text')
-            .attr('dy', '0.31em')
+            .attr('dy', '1.5em')
             .attr('x', (d) => (d.children ? -6 : 6))
-            .attr('text-anchor', (d) => (d.children ? 'end' : 'start'))
+            .attr('text-anchor', 'middle')
+            .style('font-size', '15px')
             .text((d) => d.data.name)
             .clone(true)
             .lower()
             .attr('stroke', 'white');
 
         node.on('click', (event, d) => {
-            console.log(d);
+            console.log('click', d.data);
+            const tableHeader = [];
+            const tableData = [];
+            Object.entries(d.data).forEach(([key, value]) => {
+                if (key === 'children' || key === 'kind') return;
+                tableHeader.push(key);
+                tableData.push(value);
+            });
+            setTableHeader(tableHeader);
+            setTableData(tableData);
+            /* setTableData(d); */
         });
         console.log(svg.node());
     }, [data]);
 
     return (
         <div className="flex w-full flex-col">
-            <div>topology</div>
             <div className="w-full">
                 <svg ref={svgRef}></svg>
+            </div>
+            <div className="w-full">
+                <TableContainer>
+                    <Table>
+                        <TableHead
+                            style={{ background: theme.palette.primary.main }}
+                        >
+                            <TableRow>
+                                {tableHeader.map((data) => (
+                                    <TableCell
+                                        key={data}
+                                        style={{
+                                            color: theme.typography.primaryText
+                                                .color,
+                                        }}
+                                    >
+                                        {data}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            <TableRow>
+                                {tableData.map((data) => (
+                                    <TableCell key={data}>{data}</TableCell>
+                                ))}
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             </div>
         </div>
     );
