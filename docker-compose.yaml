@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # frontend:
+  #   build:
+  #     context: frontend/.
+  #     dockerfile: Dockerfile
+  #   container_name: my-web-frontend
+  #   tty: true
+  #   ports:
+  #     - 3000:3000
+  #   volumes:
+  #     - ./frontend:/workspace
+  #     - ./assets:/assets
+  #   command: npm start
+
+  backend:
+    build:
+      context: backend/api/.
+      dockerfile: Dockerfile
+    container_name: my-web-backend
+    tty: true
+    ports:
+      - 8001:8001
+    volumes:
+      - ./backend:/workspace
+      - ./assets:/assets
+    # command: uvicorn app:app --host 0.0.0.0 --reload
