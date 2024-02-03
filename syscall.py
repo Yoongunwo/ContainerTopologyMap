@@ -10,7 +10,7 @@ ssh_client = paramiko.SSHClient()
 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 # SSH 연결
-ssh_client.connect(hostname='192.168.1.10', port=22, username='root', password='glove2274')
+ssh_client.connect(hostname='192.168.1.10', username='root', password='vagrant')
 
 # 원격 명령 실행
 stdin, stdout, stderr = ssh_client.exec_command('kubectl get nodes -o wide')  # 예: 원하는 명령어 입력

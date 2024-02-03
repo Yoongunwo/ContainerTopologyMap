@@ -30,8 +30,9 @@ def getNodes(ssh_client : paramiko.SSHClient):
                 node['children'][0]['children'].append(pod)
 
     nodes = {'name': 'node', 'children': []}
+    masterNode = None
     for node in nodesInfo:
-        if node['roles'] == 'master':
+        if node['roles'] == 'master' or node['roles'] == 'control-plane':
             masterNode = node
         else:
             nodes['children'].append(node)
