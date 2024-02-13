@@ -1,0 +1,2 @@
+class PortScan():
+    ip : str

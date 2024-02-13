@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button, TextField } from '@mui/material';
 import { fetchSshConnectionCreate } from '../../services/sshService';
+import { fetchPortScan } from '../../services/portScanService';
 
 const home = () => {
     const navigate = useNavigate();
@@ -11,8 +12,9 @@ const home = () => {
     const [port, setPort] = useState('');
     const [userName, setUserName] = useState('');
     const [password, setPassword] = useState('');
+    const [portScanIp, setPortScanIp] = useState('');
 
-    const startButtonOnclick = () => {
+    const startTopology = () => {
         const sshConnection = {
             ip: ip,
             port: port,
@@ -23,6 +25,16 @@ const home = () => {
         fetchSshConnectionCreate(sshConnection).then(async (response) => {
             if (response.status === 200) {
                 navigate('/topology');
+            }
+        });
+    };
+    const startPortScan = () => {
+        const portScanInfo = {
+            ip: portScanIp,
+        };
+        fetchPortScan(portScanInfo).then(async (response) => {
+            if (response.status === 200) {
+                navigate('/portscan');
             }
         });
     };
@@ -74,8 +86,27 @@ const home = () => {
                 />
             </div>
             <div>
-                <Button variant="contained" onClick={startButtonOnclick}>
-                    start
+                <Button variant="contained" onClick={startTopology}>
+                    Topology
+                </Button>
+            </div>
+            <div className="flex w-full mb-5">
+                <p>Port Scan</p>
+            </div>
+            <div className="flex w-full mb-5">
+                <TextField
+                    required
+                    id="portScanIp"
+                    label="IP"
+                    value={portScanIp}
+                    onChange={(e) => {
+                        setPortScanIp(e.target.value);
+                    }}
+                />
+            </div>
+            <div>
+                <Button variant="contained" onClick={startPortScan}>
+                    Port Scan
                 </Button>
             </div>
         </div>
